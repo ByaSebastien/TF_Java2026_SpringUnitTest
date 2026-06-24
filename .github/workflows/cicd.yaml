@@ -34,30 +34,30 @@ jobs:
       - name: Test
         run: mvn test
 
-#      - name: Afficher le pourcentage de tests réussis
-#        if: always()
-#        shell: bash
-#        run: |
-#          python - <<'PY'
-#          import glob
-#          import xml.etree.ElementTree as ET
-#
-#          tests = failures = errors = skipped = 0
-#
-#          for path in glob.glob("target/surefire-reports/TEST-*.xml"):
-#              root = ET.parse(path).getroot()
-#              tests += int(root.attrib.get("tests", 0))
-#              failures += int(root.attrib.get("failures", 0))
-#              errors += int(root.attrib.get("errors", 0))
-#              skipped += int(root.attrib.get("skipped", 0))
-#
-#          executed = tests - skipped
-#          passed = executed - failures - errors
-#          rate = (passed / executed * 100) if executed else 0
-#
-#          message = f"Tests réussis : {passed}/{executed} ({rate:.2f}%)"
-#          print(message)
-#
-#          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
-#              f.write(message + "\n")
-#          PY
+      - name: Afficher le pourcentage de tests réussis
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import glob
+          import xml.etree.ElementTree as ET
+
+          tests = failures = errors = skipped = 0
+
+          for path in glob.glob("target/surefire-reports/TEST-*.xml"):
+              root = ET.parse(path).getroot()
+              tests += int(root.attrib.get("tests", 0))
+              failures += int(root.attrib.get("failures", 0))
+              errors += int(root.attrib.get("errors", 0))
+              skipped += int(root.attrib.get("skipped", 0))
+
+          executed = tests - skipped
+          passed = executed - failures - errors
+          rate = (passed / executed * 100) if executed else 0
+
+          message = f"Tests réussis : {passed}/{executed} ({rate:.2f}%)"
+          print(message)
+
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
+              f.write(message + "\n")
+          PY
