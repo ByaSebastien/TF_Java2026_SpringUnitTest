@@ -25,50 +25,26 @@ jobs:
       - name: Install dependencies
         run: mvn package -DskipTests
 
-#      - name: Build with Maven
-#        run: mvn --batch-mode --update-snapshots verify
-#
-#      - name: Run Formatter
-#        run: mvn com.coveo:fmt-maven-plugin:format
-
-      - name: Test
+      # 1. On lance les tests normalement.
+      # Si un test échoue, cette étape s'arrête ici et marque l'étape comme "Failed".
+      - name: Run Tests
+        id: run_tests
         run: mvn test
 
-      - name: 'Afficher les stats de Tests et Couverture'
-        if: always()
+      # 2. Cette étape ne se déclenche QUE si l'étape précédente "Run Tests" a échoué.
+      - name: Log On Failure
+        if: failure() && steps.run_tests.outcome == 'failure'
         shell: bash
         run: |
-          echo "### 📊 Résumé de la construction" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          # --- 1. CALCUL DES TESTS SUITE ---
-          tests=0; failures=0; errors=0; skipped=0
-          
-          # Extraction des données via xmllint
-          for report in target/surefire-reports/TEST-*.xml; do
-            if [ -f "$report" ]; then
-              t=$(xmllint --xpath "string(/testsuite/@tests)" "$report" 2>/dev/null || echo 0)
-              f=$(xmllint --xpath "string(/testsuite/@failures)" "$report" 2>/dev/null || echo 0)
-              e=$(xmllint --xpath "string(/testsuite/@errors)" "$report" 2>/dev/null || echo 0)
-              s=$(xmllint --xpath "string(/testsuite/@skipped)" "$report" 2>/dev/null || echo 0)
-          
-              tests=$((tests + ${t:-0}))
-              failures=$((failures + ${f:-0}))
-              errors=$((errors + ${e:-0}))
-              skipped=$((skipped + ${s:-0}))
-            fi
-          done
-          
-          executed=$((tests - skipped))
-          passed=$((executed - failures - errors))
-          
-          if [ $executed -gt 0 ]; then
-            # Calcul du taux avec awk pour avoir les décimales
-            rate=$(awk "BEGIN {printf \"%.2f\", ($passed / $executed) * 100}")
-          else
-            rate="0.00"
-          fi
-          
-          test_message="✅ **Tests réussis :** $passed/$executed ($rate%)"
-          echo "$test_message"
-          echo "* $test_message" >> $GITHUB_STEP_SUMMARY
+          echo "❌ Un ou plusieurs tests unitaires ont échoué !"
+          echo "### ⚠️ Alerte Tests" >> $GITHUB_STEP_SUMMARY
+          echo "La suite de tests ne s'est pas terminée avec succès. Veuillez vérifier les logs ci-dessus ou les rapports Surefire pour identifier les régressions." >> $GITHUB_STEP_SUMMARY
+
+      # 3. Cette étape ne se déclenche QUE si tous les tests ont réussi.
+      - name: Log On Success
+        if: success()
+        shell: bash
+        run: |
+          echo "✅ Tous les tests sont passés avec succès !"
+          echo "### 🎉 Succès" >> $GITHUB_STEP_SUMMARY
+          echo "Tous les tests unitaires ont été validés." >> $GITHUB_STEP_SUMMARY
