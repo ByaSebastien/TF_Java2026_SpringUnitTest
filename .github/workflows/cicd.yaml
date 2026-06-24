@@ -10,8 +10,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # On ajoute explicitement les permissions requises pour les Checks et les Pull Requests
     permissions:
-      pull-requests: write # Permet aux actions de poster des commentaires si PR
+      checks: write
+      pull-requests: write
+      contents: read
 
     steps:
       - name: Checkout
@@ -27,22 +30,20 @@ jobs:
       - name: Install dependencies
         run: mvn package -DskipTests
 
-      # Exécute les tests ET génère les fichiers HTML de Surefire + JaCoCo
-      # Si un test échoue, on continue pour publier le rapport HTML !
+      # Exécute les tests ET génère les fichiers HTML
       - name: Run Tests & Generate Reports
         id: run_tests
         continue-on-error: true
         run: mvn test
 
-      # Action communautaire pour publier le rapport HTML des tests de manière lisible
+      # Nouvelle version mise à jour (ScalableCapital au lieu de scacap)
       - name: Publish Test Report
-        uses: scacap/action-surefire-report@v1
+        uses: ScalableCapital/action-surefire-report@v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           check_name: "Rapport des Tests Unitaires"
 
-      # Optionnel : Sauvegarder les rapports HTML complets dans les artefacts de GitHub
-      # Vous pourrez les télécharger en format .zip sur la page du build
+      # Sauvegarde des rapports HTML complets dans les artefacts de GitHub
       - name: Upload HTML Reports Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -53,7 +54,7 @@ jobs:
             target/site/jacoco/
           retention-days: 5
 
-      # Étape finale de contrôle de sécurité pour bloquer le build s'il y a eu un échec
+      # Vérification finale du statut
       - name: Check final status
         if: steps.run_tests.outcome == 'failure'
         run: |
