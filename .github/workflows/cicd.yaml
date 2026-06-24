@@ -34,30 +34,41 @@ jobs:
       - name: Test
         run: mvn test
 
-      - name: Afficher le pourcentage de tests réussis
+      - name: 'Afficher les stats de Tests et Couverture'
         if: always()
         shell: bash
         run: |
-          python - <<'PY'
-          import glob
-          import xml.etree.ElementTree as ET
-
-          tests = failures = errors = skipped = 0
-
-          for path in glob.glob("target/surefire-reports/TEST-*.xml"):
-              root = ET.parse(path).getroot()
-              tests += int(root.attrib.get("tests", 0))
-              failures += int(root.attrib.get("failures", 0))
-              errors += int(root.attrib.get("errors", 0))
-              skipped += int(root.attrib.get("skipped", 0))
-
-          executed = tests - skipped
-          passed = executed - failures - errors
-          rate = (passed / executed * 100) if executed else 0
-
-          message = f"Tests réussis : {passed}/{executed} ({rate:.2f}%)"
-          print(message)
-
-          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
-              f.write(message + "\n")
-          PY
+          echo "### 📊 Résumé de la construction" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # --- 1. CALCUL DES TESTS SUITE ---
+          tests=0; failures=0; errors=0; skipped=0
+          
+          # Extraction des données via xmllint
+          for report in target/surefire-reports/TEST-*.xml; do
+            if [ -f "$report" ]; then
+              t=$(xmllint --xpath "string(/testsuite/@tests)" "$report" 2>/dev/null || echo 0)
+              f=$(xmllint --xpath "string(/testsuite/@failures)" "$report" 2>/dev/null || echo 0)
+              e=$(xmllint --xpath "string(/testsuite/@errors)" "$report" 2>/dev/null || echo 0)
+              s=$(xmllint --xpath "string(/testsuite/@skipped)" "$report" 2>/dev/null || echo 0)
+          
+              tests=$((tests + ${t:-0}))
+              failures=$((failures + ${f:-0}))
+              errors=$((errors + ${e:-0}))
+              skipped=$((skipped + ${s:-0}))
+            fi
+          done
+          
+          executed=$((tests - skipped))
+          passed=$((executed - failures - errors))
+          
+          if [ $executed -gt 0 ]; then
+            # Calcul du taux avec awk pour avoir les décimales
+            rate=$(awk "BEGIN {printf \"%.2f\", ($passed / $executed) * 100}")
+          else
+            rate="0.00"
+          fi
+          
+          test_message="✅ **Tests réussis :** $passed/$executed ($rate%)"
+          echo "$test_message"
+          echo "* $test_message" >> $GITHUB_STEP_SUMMARY
