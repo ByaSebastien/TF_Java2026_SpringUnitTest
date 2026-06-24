@@ -31,6 +31,14 @@ jobs:
         id: run_tests
         run: mvn test
 
+      - name: Upload JUnit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-reports
+          path: target/surefire-reports/
+          retention-days: 30
+
       # 2. Cette étape ne se déclenche QUE si l'étape précédente "Run Tests" a échoué.
       - name: Log On Failure
         if: failure() && steps.run_tests.outcome == 'failure'
