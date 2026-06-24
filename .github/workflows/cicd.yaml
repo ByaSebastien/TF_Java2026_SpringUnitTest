@@ -38,6 +38,7 @@ jobs:
       - name: Publish Test Report
         uses: scacap/action-surefire-report@v1
         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           check_name: "Rapport des Tests Unitaires"
 
       # Optionnel : Sauvegarder les rapports HTML complets dans les artefacts de GitHub
