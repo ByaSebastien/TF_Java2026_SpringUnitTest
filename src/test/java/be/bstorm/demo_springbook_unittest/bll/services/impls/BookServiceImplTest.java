@@ -65,7 +65,8 @@ public class BookServiceImplTest {
 
         Book actualBook = bookServiceMocked.findById(42L);
 
-        assertNotNull(actualBook);
+//        assertNotNull(actualBook);
+        assertNull(actualBook);
         assertEquals(book,actualBook);
     }
 
@@ -73,8 +74,7 @@ public class BookServiceImplTest {
     void shouldGetOneBookWithFailure(){
         when(bookRepository.findById(42L)).thenReturn(Optional.empty());
 
-//        assertThrows(NoSuchElementException.class,()-> bookServiceMocked.findById(42L));
-        assertThrows(NoSuchElementException.class,()-> bookServiceMocked.findById(43L));
+        assertThrows(NoSuchElementException.class,()-> bookServiceMocked.findById(42L));
     }
 
 }
