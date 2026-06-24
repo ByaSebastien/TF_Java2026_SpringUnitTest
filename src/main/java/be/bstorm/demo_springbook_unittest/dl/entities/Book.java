@@ -1,0 +1,28 @@
+package be.bstorm.demo_springbook_unittest.dl.entities;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(of = {"id", "title", "description"})
+@ToString(of = {"id", "title"})
+@Entity
+public class Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true, length = 100)
+    private String title;
+
+    private String description;
+
+    public Book(String title, String description) {
+        this.title = title;
+        this.description = description;
+    }
+}
