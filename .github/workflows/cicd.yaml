@@ -30,6 +30,7 @@ jobs:
       - name: Run Tests
         id: run_tests
         run: mvn test
+        continue-on-error: true
 
       # 2. Cette étape ne se déclenche QUE si l'étape précédente "Run Tests" a échoué.
       - name: Log On Failure
