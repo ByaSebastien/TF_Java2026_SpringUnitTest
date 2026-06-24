@@ -73,7 +73,8 @@ public class BookServiceImplTest {
     void shouldGetOneBookWithFailure(){
         when(bookRepository.findById(42L)).thenReturn(Optional.empty());
 
-        assertThrows(NoSuchElementException.class,()-> bookServiceMocked.findById(42L));
+//        assertThrows(NoSuchElementException.class,()-> bookServiceMocked.findById(42L));
+        assertThrows(NoSuchElementException.class,()-> bookServiceMocked.findById(43L));
     }
 
 }
