@@ -10,6 +10,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write # Permet aux actions de poster des commentaires si PR
 
     steps:
       - name: Checkout
@@ -25,34 +27,34 @@ jobs:
       - name: Install dependencies
         run: mvn package -DskipTests
 
-      # 1. On lance les tests normalement.
-      # Si un test échoue, cette étape s'arrête ici et marque l'étape comme "Failed".
-      - name: Run Tests
+      # Exécute les tests ET génère les fichiers HTML de Surefire + JaCoCo
+      # Si un test échoue, on continue pour publier le rapport HTML !
+      - name: Run Tests & Generate Reports
         id: run_tests
+        continue-on-error: true
         run: mvn test
 
-      - name: Upload JUnit reports
+      # Action communautaire pour publier le rapport HTML des tests de manière lisible
+      - name: Publish Test Report
+        uses: scacap/action-surefire-report@v1
+        with:
+          check_name: "Rapport des Tests Unitaires"
+
+      # Optionnel : Sauvegarder les rapports HTML complets dans les artefacts de GitHub
+      # Vous pourrez les télécharger en format .zip sur la page du build
+      - name: Upload HTML Reports Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: junit-reports
-          path: target/surefire-reports/
-          retention-days: 30
+          name: maven-html-reports
+          path: |
+            target/site/surefire-report.html
+            target/site/jacoco/
+          retention-days: 5
 
-      # 2. Cette étape ne se déclenche QUE si l'étape précédente "Run Tests" a échoué.
-      - name: Log On Failure
-        if: failure() && steps.run_tests.outcome == 'failure'
-        shell: bash
+      # Étape finale de contrôle de sécurité pour bloquer le build s'il y a eu un échec
+      - name: Check final status
+        if: steps.run_tests.outcome == 'failure'
         run: |
-          echo "❌ Un ou plusieurs tests unitaires ont échoué !"
-          echo "### ⚠️ Alerte Tests" >> $GITHUB_STEP_SUMMARY
-          echo "La suite de tests ne s'est pas terminée avec succès. Veuillez vérifier les logs ci-dessus ou les rapports Surefire pour identifier les régressions." >> $GITHUB_STEP_SUMMARY
-
-      # 3. Cette étape ne se déclenche QUE si tous les tests ont réussi.
-      - name: Log On Success
-        if: success()
-        shell: bash
-        run: |
-          echo "✅ Tous les tests sont passés avec succès !"
-          echo "### 🎉 Succès" >> $GITHUB_STEP_SUMMARY
-          echo "Tous les tests unitaires ont été validés." >> $GITHUB_STEP_SUMMARY
+          echo "❌ Certains tests unitaires ont échoué. Consultez l'onglet 'Checks' ou téléchargez les artefacts."
+          exit 1
