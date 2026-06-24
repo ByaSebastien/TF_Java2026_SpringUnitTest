@@ -65,8 +65,7 @@ public class BookServiceImplTest {
 
         Book actualBook = bookServiceMocked.findById(42L);
 
-//        assertNotNull(actualBook);
-        assertNull(actualBook);
+        assertNotNull(actualBook);
         assertEquals(book,actualBook);
     }
 
